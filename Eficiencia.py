@@ -1,5 +1,6 @@
 # Programa para calcular la eficiencia de produccion de las tiendas
 # Modificado Agosto 9/2023 Se agrego Tienda de Ensenada
+# Ago 11 se subio a Github
 
 from __future__ import print_function
 import pandas as pd
