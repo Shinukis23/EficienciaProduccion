@@ -35,16 +35,16 @@ credentials = ServiceAccountCredentials.from_json_keyfile_name("monitor-eficienc
 file = gspread.authorize(credentials)# authenticate the JSON key with gspread
 
 
-dfCortes = pd.read_csv(r'horasCorte.csv')
-H = dfCortes["horas"].tolist()
-M = dfCortes["minutos"].tolist()
-tiendas = ['1','2','6','7','8','4','14','10','15'] # Arreglo de numeros de tiendas Tapatio
+dfcortes = pd.read_csv(r'horasCorte.csv')
+H = dfcortes["horas"].tolist()
+M = dfcortes["minutos"].tolist()
+tiendas = ['1','2','6','7','8','4','14','10','15','20'] # Arreglo de numeros de tiendas Tapatio
 Jobs = []
 hora = 0
 JobStore = [[] for _ in range(len(tiendas))]
 columnas = [3,13,14,16]
-hojas = ['SiempreViva','Nirvana','San Bernardino','Rosamond','Rosamond','Desarme TJ','Desarme TJ','Economy','Ensenada']
-hojas2 = ['SiempreViva','Nirvana','San Bernardino','Rosamond','TDT','Economy','Ensenada']
+hojas = ['SiempreViva','Nirvana','San Bernardino','Rosamond','Rosamond','Desarme TJ','Desarme TJ','Economy','Ensenada','Natalia']
+hojas2 = ['SiempreViva','Nirvana','San Bernardino','Rosamond','TDT','Economy','Ensenada','Natalia']
 valor = ['Voided','New','Pickup']
 
 @Gooey(program_name="Eficiencia Diaria Tapatio Stores")
@@ -77,7 +77,7 @@ def parse_args():
                         action='store',
                         default=stored_args.get('cust_file'),
                         widget='FileChooser',
-                        help='Ej. horaCortesFestivos.csv')
+                        help='Ej. horacortesFestivos.csv')
     parser.add_argument('Fecha', help='Seleccione Fecha para generar reporte',
                         default=stored_args.get('Fecha'),
                         widget='DateChooser')
@@ -99,22 +99,22 @@ def inicial():
     file = gspread.authorize(credentials)# authenticate the JSON key with gspread
 
     columnas = [3,13,14,16]
-    tiendas = ['1','2','6','7','8','4','14','10','15'] # Arreglo de numeros de tiendas Tapatio
+    tiendas = ['1','2','6','7','8','4','14','10','15','20'] # Arreglo de numeros de tiendas Tapatio
     Jobs = []
     JobStore = [[] for _ in range(len(tiendas))]
-    hojas = ['SiempreViva','Nirvana','San Bernardino','Rosamond','Rosamond','Desarme TJ','Desarme TJ','Economy','Ensenada']
-    hojas2 = ['SiempreViva','Nirvana','San Bernardino','Rosamond','TDT','Economy','Ensenada']
+    hojas = ['SiempreViva','Nirvana','San Bernardino','Rosamond','Rosamond','Desarme TJ','Desarme TJ','Economy','Ensenada','Natalia']
+    hojas2 = ['SiempreViva','Nirvana','San Bernardino','Rosamond','TDT','Economy','Ensenada','Natalia']
     valor = ['Voided','New','Pickup']
 
-def Cortes(Archivo_Corte):
-    dfCortes = pd.read_csv(Archivo_Corte)
-    H = dfCortes["horas"].tolist()
-    M = dfCortes["minutos"].tolist()
+def cortes(Archivo_Corte):
+    dfcortes = pd.read_csv(Archivo_Corte)
+    H = dfcortes["horas"].tolist()
+    M = dfcortes["minutos"].tolist()
     return H,M
 
 #busca los trabajos de cada tienda de acuerdo a los horarios de corte
 def trabajos(store,i,cortes,date,ds2,datet):
-    cut = horaCortes(store,cortes,date)
+    cut = horacortes(store,cortes,date)
     Jobs.append(str(datetime.date(date)))
     Jobs.append(hojas[i])
     Jobs.append(len(ds2[(ds2['Part Store #'] == store) & (ds2['Created'] >= cut[0]) & (ds2['Created'] <= cut[1])] ))
@@ -126,7 +126,7 @@ def trabajos(store,i,cortes,date,ds2,datet):
     JobStore[i].extend(Jobs)
 
 
-def sumaStores(JobStore,st1,st2):
+def suma_stores(JobStore,st1,st2):
  for j in range(2,8):
   JobStore[st1][j] = JobStore[st1][j] + JobStore[st2][j]
  JobStore.pop(st2)
@@ -140,8 +140,8 @@ def principal(date,nombre,H,M,directorio):
     nombre2 = head_tail[1].split('.')
     nombre3 = directorio + "\\"+ nombre2[0] + ".xlsx"
     nombre4 = directorio + "\\"+ nombre2[0] + "_Logistica.xlsx"
-    ds2 = timeFix(columnas,hora,ds)
-    rangoFechas(ds2,date)
+    ds2 = time_fix(columnas,hora,ds)
+    rango_fechas(ds2,date)
     print(ds2)
     #writer = pd.ExcelWriter(nombre4, engine='xlsxwriter')
     # Convert the dataframe to an XlsxWriter Excel object.
@@ -152,17 +152,17 @@ def principal(date,nombre,H,M,directorio):
     ss = file.open("EficienciaReporte")
     print("Conexion exitosa")
 
-    borraColumnas('Job Status',valor,ds2)
+    borra_columnas('Job Status',valor,ds2)
     #print(H[0])
 
-    cortes,datet = fechasCorte1(date,H,M)
+    cortes,datet = fechas_corte1(date,H,M)
         
     for i in range(len(tiendas)):
      trabajos(int(tiendas[i]),i,cortes,date,ds2,datet)
      Jobs.clear()
 
-    sumaStores(JobStore,3,4) 
-    sumaStores(JobStore,4,5)
+    suma_stores(JobStore,3,4) 
+    suma_stores(JobStore,4,5)
 
     # Actualizo reporte de eficiencia de Google Drive
     for i in range(len(hojas2)):
@@ -191,6 +191,6 @@ def principal(date,nombre,H,M,directorio):
 
 if __name__ == '__main__':
     conf = parse_args()
-    H,M=Cortes(conf.Archivo_Corte)
+    H,M=cortes(conf.Archivo_Corte)
     principal(conf.Fecha,conf.Archivo_CSV,H,M,conf.Directorio_de_salida)
      
